@@ -25,15 +25,21 @@ Distribution Alternatives:
 ### Archive Installation
 * On the home/landing page for the project find the blue "<> CODE" button click it and select Local > Download ZIP.
 * Extract the archive to:
+  
   `~/.config/nvim` (Linux)
+  
   `~/.config/nvim` (MacOS)
+  
   `%userprofile%\AppData\Local\nvim\` (Windows)
 * Ensure your extraction method did not extract with a parent folder. For example in ~/.config/nvim you should have init.lua not another folder called kickstart.nvim.
 
 ### Git Clone Installation
 * From a terminal cd/dir to:
-    `~/.config/nvim` (Linux)
-    `~/.config/nvim` (MacOS)
+  
+    `~/.config` (Linux)
+  
+    `~/.config` (MacOS)
+  
     `%userprofile%\AppData\Local\nvim\` (Windows)
 
 * run: `git clone https://github.com/nvim-lua/kickstart.nvim.git ~/.config/nvim` OR: `gh repo clone nvim-lua/kickstart.nvim`
