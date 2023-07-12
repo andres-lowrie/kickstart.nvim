@@ -220,14 +220,20 @@ require('lazy').setup({
   { import = 'custom.plugins' },
 
   -- My Garbage from outside ths directory
-  'andres-lowrie/vim-sqlx'
+  'andres-lowrie/vim-sqlx',
+
+  {
+    'andres-lowrie/vim-maximizer',
+    config = function()
+      vim.keymap.set({ 'n' }, '<Leader>wm', ':MaximizerToggle<CR>')
+    end
+  }
 }, {})
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- [[ Base/Essentials ]]
 vim.o.shell = "/bin/bash"
-vim.o.backspace = 2
 vim.go.ignorecase = true
 vim.go.smartcase = true
 vim.go.spellang = 'en_us'
@@ -235,12 +241,12 @@ vim.o.number = true
 vim.o.relativenumber = true
 vim.o.splitbelow = true
 vim.o.splitright = true
--- vim.o.re = 1
 vim.o.tabpagemax = 100
 vim.go.incsearch = true
 vim.o.hlsearch = false
 vim.wo.number = true
 vim.o.termguicolors = true
+vim.o.autoindent = true
 
 vim.o.mouse = 'a'
 vim.o.breakindent = true
@@ -304,7 +310,7 @@ vim.keymap.set('n', '<Leader>wJ', "<C-w>J", { silent = true })
 vim.keymap.set('n', '<Leader>wK', "<C-w>K", { silent = true })
 -- Writing/Reading
 vim.keymap.set('n', '<Leader>wd', ":close<CR>", { silent = true })
-vim.keymap.set('n', '<Leader>wo', ":<C-w>o", { silent = true })
+vim.keymap.set('n', '<Leader>wo', "<C-w>o", { silent = true })
 vim.keymap.set('n', '<Leader>fs', ":w<CR>", { silent = true })
 vim.keymap.set('n', '<Leader>fa', ":wa<CR>", { silent = true })
 
@@ -343,6 +349,30 @@ vim.keymap.set('n', '<Leader><BS>', ':let @+=expand("%:p")<CR>', { silent = true
 -- [[ NETWR ]]
 vim.keymap.set('n', '<Leader>cd', ":lcd %:p:h<CR>", { silent = true })
 
+-- [[ Language Stuff ]]
+-- diffing
+vim.opt.diffopt:append { "vertical" }
+
+-- Bats
+vim.cmd([[
+  au BufNewFile,BufRead,BufReadPost *.bats set syntax=sh
+]])
+
+-- SQL and sql-likes (not sqlx, have specific for that)
+vim.cmd([[
+  au BufNewFile,BufRead,BufReadPost *.hql set syntax=sql
+]])
+
+-- [[ Toggles ]]
+vim.keymap.set({ 'n' }, '<Leader>tp', ':set paste! paste?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tw', ':set wrap! wrap?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tsb', ':set scrollbind!<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tss', ':set spell! spell?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tci', ':set ic! ic?<CR>', { silent = true })
+
+-- [[ Tabs ]]
+vim.keymap.set({ 'n' }, 'T', ':tabnew .<CR>', { silent = true })
+
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
 require('telescope').setup {
@@ -371,6 +401,7 @@ vim.keymap.set('n', '<leader>/', function()
 end, { desc = '[/] Fuzzily search in current buffer' })
 
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
+vim.keymap.set('n', '<C-p>', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
@@ -381,7 +412,8 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'vimdoc', 'vim' },
+  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'javascript', 'vimdoc', 'vim',
+    'sql' },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
