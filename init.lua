@@ -1,44 +1,7 @@
---[[
-
-=====================================================================
-==================== READ THIS BEFORE CONTINUING ====================
-=====================================================================
-
-Kickstart.nvim is *not* a distribution.
-
-Kickstart.nvim is a template for your own configuration.
-  The goal is that you can read every line of code, top-to-bottom, understand
-  what your configuration is doing, and modify it to suit your needs.
-
-  Once you've done that, you should start exploring, configuring and tinkering to
-  explore Neovim!
-
-  If you don't know anything about Lua, I recommend taking some time to read through
-  a guide. One possible example:
-  - https://learnxinyminutes.com/docs/lua/
-
-  And then you can explore or search through `:help lua-guide`
-
-
-Kickstart Guide:
-
-I have left several `:help X` comments throughout the init.lua
-You should run that command and read that help section for more information.
-
-In addition, I have some `NOTE:` items throughout the file.
-These are for you, the reader to help understand what is happening. Feel free to delete
-them once you know what you're doing, but they should serve as a guide for when you
-are first encountering a few different constructs in your nvim config.
-
-I hope you enjoy your Neovim journey,
-- TJ
-
-P.S. You can delete this when you're done too. It's your config now :)
---]]
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
-vim.g.mapleader = ' '
+vim.g.mapleader = " "
 vim.g.maplocalleader = ' '
 
 -- Install package manager
@@ -72,6 +35,18 @@ require('lazy').setup({
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
 
+  -- AutoPairs: https://github.com/jiangmiao/auto-pairs
+  -- 'LunarWatcher/auto-pairs',
+
+  --Vinegar: https://github.com/tpope/vim-vinegar
+  'tpope/vim-vinegar',
+
+  -- Surround: https://github.com/tpope/vim-surround
+  'tpope/vim-surround',
+
+  -- Signature:  https://github.com/kshenoy/vim-signature
+  'kshenoy/vim-signature',
+
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
   {
@@ -84,7 +59,7 @@ require('lazy').setup({
 
       -- Useful status updates for LSP
       -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      { 'j-hui/fidget.nvim', tag = 'legacy', opts = {} },
+      -- { 'j-hui/fidget.nvim',       tag = 'legacy', opts = {} },
 
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',
@@ -108,7 +83,7 @@ require('lazy').setup({
   },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim', opts = {} },
+  { 'folke/which-key.nvim',          opts = {} },
   {
     -- Adds git releated signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -122,7 +97,8 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
       on_attach = function(bufnr)
-        vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk, { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
+        vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk,
+          { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
         vim.keymap.set('n', '<leader>gn', require('gitsigns').next_hunk, { buffer = bufnr, desc = '[G]o to [N]ext Hunk' })
         vim.keymap.set('n', '<leader>ph', require('gitsigns').preview_hunk, { buffer = bufnr, desc = '[P]review [H]unk' })
       end,
@@ -130,11 +106,32 @@ require('lazy').setup({
   },
 
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
+    -- Theme
+    'EdenEast/nightfox.nvim',
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      local commentcolor = '#33aaaa' -- cyan
+      local options = {}
+      local palettes = {
+        nightfox = {
+          comment = commentcolor,
+        },
+        nordfox = {
+          comment = commentcolor,
+        },
+        dawnfox = {
+          comment = commentcolor,
+        },
+      }
+
+      require('nightfox').setup({
+        palettes = palettes,
+        options = options,
+      })
+      vim.cmd.colorscheme 'nordfox'
+
+      -- hacks for octo plugin
+      vim.cmd('hi OctoEditable guibg=None')
     end,
   },
 
@@ -145,7 +142,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'nord',
         component_separators = '|',
         section_separators = '',
       },
@@ -163,8 +160,18 @@ require('lazy').setup({
     },
   },
 
-  -- "gc" to comment visual regions/lines
-  { 'numToStr/Comment.nvim', opts = {} },
+  -- comment visual regions/lines
+  {
+    'numToStr/Comment.nvim',
+    opts = {
+      toggler = {
+        line = 'cll'
+      },
+      opleader = {
+        line = 'cl'
+      }
+    }
+  },
 
   -- Fuzzy Finder (files, lsp, etc)
   { 'nvim-telescope/telescope.nvim', branch = '0.1.x', dependencies = { 'nvim-lua/plenary.nvim' } },
@@ -191,66 +198,78 @@ require('lazy').setup({
     build = ':TSUpdate',
   },
 
-  -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
-  --       These are some example plugins that I've included in the kickstart repository.
-  --       Uncomment any of the lines below to enable them.
-  -- require 'kickstart.plugins.autoformat',
-  -- require 'kickstart.plugins.debug',
+  {
+    't9md/vim-choosewin',
+    config = function()
+      vim.go.choosewin_overlay_enable = 1
+      vim.keymap.set({ 'n' }, '<Leader>ww', '<Plug>(choosewin)')
+    end
+  },
 
-  -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
-  --    You can use this folder to prevent any conflicts with this init.lua if you're interested in keeping
-  --    up-to-date with whatever is in the kickstart repo.
-  --    Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
-  --
-  --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  -- { import = 'custom.plugins' },
+  {
+    'phaazon/hop.nvim',
+    config = function()
+      require('hop').setup()
+      vim.keymap.set({ 'n' }, '<Leader>jq',
+        "<cmd>lua require'hop'.hint_char1({ direction = nil, current_line_only = false })<CR>")
+    end
+  },
+
+  -- In this repo
+  require 'kickstart.plugins.autoformat',
+  { import = 'custom.plugins' },
+
+  -- My Garbage from outside ths directory
+  'andres-lowrie/vim-sqlx'
 }, {})
 
 -- [[ Setting options ]]
 -- See `:help vim.o`
--- NOTE: You can change these options as you wish!
-
--- Set highlight on search
+-- [[ Base/Essentials ]]
+vim.o.shell = "/bin/bash"
+vim.o.backspace = 2
+vim.go.ignorecase = true
+vim.go.smartcase = true
+vim.go.spellang = 'en_us'
+vim.o.number = true
+vim.o.relativenumber = true
+vim.o.splitbelow = true
+vim.o.splitright = true
+-- vim.o.re = 1
+vim.o.tabpagemax = 100
+vim.go.incsearch = true
 vim.o.hlsearch = false
-
--- Make line numbers default
 vim.wo.number = true
+vim.o.termguicolors = true
 
--- Enable mouse mode
 vim.o.mouse = 'a'
-
--- Sync clipboard between OS and Neovim.
---  Remove this option if you want your OS clipboard to remain independent.
---  See `:help 'clipboard'`
-vim.o.clipboard = 'unnamedplus'
-
--- Enable break indent
 vim.o.breakindent = true
-
--- Save undo history
 vim.o.undofile = true
-
--- Case-insensitive searching UNLESS \C or capital in search
-vim.o.ignorecase = true
-vim.o.smartcase = true
-
--- Keep signcolumn on by default
 vim.wo.signcolumn = 'yes'
 
--- Decrease update time
 vim.o.updatetime = 250
 vim.o.timeout = true
 vim.o.timeoutlen = 300
 
--- Set completeopt to have a better completion experience
 vim.o.completeopt = 'menuone,noselect'
 
--- NOTE: You should make sure your terminal supports this
-vim.o.termguicolors = true
+-- [[ Indentation ]]
+vim.o.tabstop = 2
+vim.o.shiftwidth = 2
+vim.o.expandtab = true
+vim.o.nowrap = true
+vim.o.formatoptions = "croql"
+
+-- [[ Clipboard ]]
+--  See `:help 'clipboard'`
+vim.o.clipboard = 'unnamedplus'
+vim.keymap.set({ 'n' }, '<Leader>y', '"*y', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>p', '"*p', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>Y', '"*Y', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>P', '"*P', { silent = true })
+
 
 -- [[ Basic Keymaps ]]
-
--- Keymaps for better default experience
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 
@@ -268,6 +287,61 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   group = highlight_group,
   pattern = '*',
 })
+
+-- [[ Windows and Project ]]
+-- Spliting
+vim.keymap.set('n', '<Leader>w-', "<C-w>s", { silent = true })
+vim.keymap.set('n', '<Leader>w/', "<C-w>v", { silent = true })
+vim.keymap.set('n', '<Leader>wh', "<C-w>h", { silent = true })
+vim.keymap.set('n', '<Leader>wj', "<C-w>j", { silent = true })
+vim.keymap.set('n', '<Leader>wk', "<C-w>k", { silent = true })
+vim.keymap.set('n', '<Leader>wl', "<C-w>l", { silent = true })
+vim.keymap.set('n', '<Leader>w=', "<C-w>=", { silent = true })
+-- Moving
+vim.keymap.set('n', '<Leader>wL', "<C-w>L", { silent = true })
+vim.keymap.set('n', '<Leader>wH', "<C-w>H", { silent = true })
+vim.keymap.set('n', '<Leader>wJ', "<C-w>J", { silent = true })
+vim.keymap.set('n', '<Leader>wK', "<C-w>K", { silent = true })
+-- Writing/Reading
+vim.keymap.set('n', '<Leader>wd', ":close<CR>", { silent = true })
+vim.keymap.set('n', '<Leader>wo', ":<C-w>o", { silent = true })
+vim.keymap.set('n', '<Leader>fs', ":w<CR>", { silent = true })
+vim.keymap.set('n', '<Leader>fa', ":wa<CR>", { silent = true })
+
+-- [[ Buffers ]]
+-- Last Buffer
+vim.keymap.set('n', '<Leader><Tab>', ":e#<CR>", { silent = true })
+-- List Buffer
+--vim.leymap.set('n', '<Leader>bb', "Telescope", { silent = true })
+-- Delete Buffer
+vim.keymap.set('n', '<Leader>bd', ":bdelete", { silent = true })
+
+-- [[ Insert Mode ]]
+vim.keymap.set('i', '<C-a>', "<C-o>^", { silent = true })
+vim.keymap.set('i', '<C-e>', "<C-o>$", { silent = true })
+vim.keymap.set('i', '<C-h>', "<BS>", { silent = true })
+
+-- [[ Command Mode ]]
+vim.keymap.set('c', '<C-a>', "<Home>", { silent = true })
+vim.keymap.set('c', '<C-e>', "<End>", { silent = true })
+vim.keymap.set('c', '<C-p>', "<Up>", { silent = true })
+vim.keymap.set('c', '<C-n>', "<Down>", { silent = true })
+vim.keymap.set('c', '<M-b>', "<Left>", { silent = true })
+vim.keymap.set('c', '<M-e>', "<Right>", { silent = true })
+
+-- [[ File Info ]]
+vim.keymap.set('n', '<Leader>sc', ":noh<CR>", { silent = true })
+vim.keymap.set('n', '<BS>', ':echo expand("%:p")<CR>', { silent = true })
+vim.keymap.set('n', '<Leader><BS>', ':let @+=expand("%:p")<CR>', { silent = true })
+
+
+
+-- [[ Shortcuts ]]
+-- Insert todays date
+-- vim.keymap.set('n', '<F5>', "=strftime('%F')<CR>P", { silent = true })
+
+-- [[ NETWR ]]
+vim.keymap.set('n', '<Leader>cd', ":lcd %:p:h<CR>", { silent = true })
 
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
@@ -410,9 +484,9 @@ local on_attach = function(_, bufnr)
   nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
   nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
   nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
-  nmap('<leader>wl', function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  end, '[W]orkspace [L]ist Folders')
+  -- nmap('<leader>wl', function()
+  --   print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
+  -- end, '[W]orkspace [L]ist Folders')
 
   -- Create a command `:Format` local to the LSP buffer
   vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
