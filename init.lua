@@ -276,7 +276,7 @@ require('lazy').setup({
   require 'kickstart.plugins.autoformat',
   { import = 'custom.plugins' },
 
-  -- My Garbage from outside ths directory
+  -- My Garbage from outside ths directory that's "published"
   'andres-lowrie/vim-sqlx',
 
   {
@@ -284,8 +284,17 @@ require('lazy').setup({
     config = function()
       vim.keymap.set({ 'n' }, '<Leader>wm', ':MaximizerToggle<CR>')
     end
-  }
+  },
+
+  -- Hot trash garbage that's local and not published
+      {
+        dir = vim.env.HOME .. "/Projects/nvim/search-internet",
+        dev = true,
+      }
 }, {})
+
+-- global functions for deving
+require 'for_deving'
 
 
 -- [[ Setting options ]]
