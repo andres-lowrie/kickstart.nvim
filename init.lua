@@ -210,8 +210,40 @@ require('lazy').setup({
     'phaazon/hop.nvim',
     config = function()
       require('hop').setup()
-      vim.keymap.set({ 'n' }, '<Leader>jq',
+      vim.keymap.set({ 'n' }, '<Leader>jw',
         "<cmd>lua require'hop'.hint_char1({ direction = nil, current_line_only = false })<CR>")
+    end
+  },
+
+  -- Wiki
+  {
+    'vimwiki/vimwiki',
+    init = function()
+      local api = vim.api
+      local opts = { noremap = true, silent = true }
+
+      -- diable html bindings
+      api.nvim_exec2([[
+        let g:vimwiki_key_mappings =
+          \{
+          \ 'html': 0,
+          \}
+        ]]
+      , {})
+
+      -- use markdown but only in the vimwiki dir
+      api.nvim_exec2([[
+          let g:vimwiki_list = [{  'path': '~/vimwiki/', 'syntax': 'markdown', 'ext': '.md' }]
+          let g:vimwiki_table_auto_fmt = 0
+        ]]
+      , {})
+
+      vim.g.vimwiki_global_ext = 0
+
+
+      api.nvim_set_keymap('n', '<leader>w<BS>', '<Plug>VimwikiIndex', opts)
+      api.nvim_set_keymap('n', '<leader>wx', '<Plug>VimwikiDeleteFile', opts)
+      api.nvim_set_keymap('n', '<leader>w<TAB>', '<Plug>VimwikiUISelect', opts)
     end
   },
 
@@ -263,7 +295,7 @@ vim.o.completeopt = 'menuone,noselect'
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 vim.o.expandtab = true
-vim.o.nowrap = true
+vim.o.wrap = false
 vim.o.formatoptions = "croql"
 
 -- [[ Clipboard ]]
