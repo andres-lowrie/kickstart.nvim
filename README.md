@@ -42,7 +42,7 @@ Distribution Alternatives:
   
     `%userprofile%\AppData\Local\nvim\` (Windows)
 
-* run: `git clone https://github.com/nvim-lua/kickstart.nvim.git ~/.config/nvim` OR: `gh repo clone nvim-lua/kickstart.nvim`
+* run: `git clone git@github.com:andres-lowrie/kickstart.nvim.git ~/.config/nvim` OR: `gh repo clone nvim-lua/kickstart.nvim`
 * Run Neovim (from terminal or shortcut) and allow lazy.nvim to download files and set up the basics.
 * Once the setup is complete, restart Neovim.
 * **You're ready to go!**
