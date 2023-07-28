@@ -31,6 +31,7 @@ require('lazy').setup({
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  'junegunn/gv.vim',
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -46,6 +47,29 @@ require('lazy').setup({
 
   -- Signature:  https://github.com/kshenoy/vim-signature
   'kshenoy/vim-signature',
+
+  -- Goyo: https://github.com/junegunn/goyo.vim
+  {
+    'junegunn/goyo.vim',
+    config = function()
+      vim.api.nvim_create_autocmd("User", {
+        callback = function()
+          require('lualine').hide({})
+        end,
+        pattern = "GoyoEnter"
+      })
+      vim.api.nvim_create_autocmd("User", {
+        callback = function()
+          require('lualine').hide({ unhide = true })
+        end,
+        pattern = "GoyoLeave"
+      })
+    end
+  },
+
+  -- Lexima: https://github.com/cohama/lexima.vim
+  -- use in lieu of auto-pairs
+  'cohama/lexima.vim',
 
   -- NOTE: This is where your plugins related to LSP can be installed.
   --  The configuration is done below. Search for lspconfig to find it below.
@@ -97,10 +121,11 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
       on_attach = function(bufnr)
-        vim.keymap.set('n', '<leader>gp', require('gitsigns').prev_hunk,
+        vim.keymap.set('n', '<leader>hp', require('gitsigns').prev_hunk,
           { buffer = bufnr, desc = '[G]o to [P]revious Hunk' })
-        vim.keymap.set('n', '<leader>gn', require('gitsigns').next_hunk, { buffer = bufnr, desc = '[G]o to [N]ext Hunk' })
-        vim.keymap.set('n', '<leader>ph', require('gitsigns').preview_hunk, { buffer = bufnr, desc = '[P]review [H]unk' })
+        vim.keymap.set('n', '<leader>hn', require('gitsigns').next_hunk, { buffer = bufnr, desc = '[G]o to [N]ext Hunk' })
+        vim.keymap.set('n', '<leader>hhp', require('gitsigns').preview_hunk,
+          { buffer = bufnr, desc = '[P]review [H]unk' })
       end,
     },
   },
@@ -210,7 +235,7 @@ require('lazy').setup({
     'phaazon/hop.nvim',
     config = function()
       require('hop').setup()
-      vim.keymap.set({ 'n' }, '<Leader>jq',
+      vim.keymap.set({ 'n' }, '<Leader>jw',
         "<cmd>lua require'hop'.hint_char1({ direction = nil, current_line_only = false })<CR>")
     end
   },
@@ -230,41 +255,42 @@ require('lazy').setup({
   }
 }, {})
 
+
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- [[ Base/Essentials ]]
-vim.o.shell = "/bin/bash"
 vim.go.ignorecase = true
+vim.go.incsearch = true
 vim.go.smartcase = true
 vim.go.spellang = 'en_us'
+vim.o.autoindent = true
+vim.o.breakindent = true
+vim.o.completeopt = 'menuone,noselect'
+vim.o.hlsearch = false
+vim.o.mouse = 'a'
 vim.o.number = true
 vim.o.relativenumber = true
+vim.o.shell = "/bin/bash"
 vim.o.splitbelow = true
 vim.o.splitright = true
 vim.o.tabpagemax = 100
-vim.go.incsearch = true
-vim.o.hlsearch = false
-vim.wo.number = true
 vim.o.termguicolors = true
-vim.o.autoindent = true
-
-vim.o.mouse = 'a'
-vim.o.breakindent = true
-vim.o.undofile = true
-vim.wo.signcolumn = 'yes'
-
-vim.o.updatetime = 250
 vim.o.timeout = true
 vim.o.timeoutlen = 300
-
-vim.o.completeopt = 'menuone,noselect'
+vim.o.undofile = true
+vim.o.updatetime = 250
+vim.wo.number = true
+vim.wo.signcolumn = 'yes'
 
 -- [[ Indentation ]]
 vim.o.tabstop = 2
 vim.o.shiftwidth = 2
 vim.o.expandtab = true
-vim.o.nowrap = true
+vim.o.wrap = false
 vim.o.formatoptions = "croql"
+
+-- [[ Diffing ]]
+vim.opt.diffopt:append { "vertical" }
 
 -- [[ Clipboard ]]
 --  See `:help 'clipboard'`
@@ -275,13 +301,20 @@ vim.keymap.set({ 'n' }, '<Leader>Y', '"*Y', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>P', '"*P', { silent = true })
 
 
--- [[ Basic Keymaps ]]
+-- [[ Keymaps ]]
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
 
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
+
+
+vim.keymap.set('n', '<Up>', ":cp<CR>", { silent = true })
+vim.keymap.set('n', '<Down>', ":cn<CR>", { silent = true })
+vim.keymap.set('n', '<Left>', ":cp<CR>", { silent = true })
+vim.keymap.set('n', '<Right>', ":cn<CR>", { silent = true })
+
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
@@ -320,7 +353,7 @@ vim.keymap.set('n', '<Leader><Tab>', ":e#<CR>", { silent = true })
 -- List Buffer
 --vim.leymap.set('n', '<Leader>bb', "Telescope", { silent = true })
 -- Delete Buffer
-vim.keymap.set('n', '<Leader>bd', ":bdelete", { silent = true })
+vim.keymap.set('n', '<Leader>bd', ":bdelete<CR>", { silent = true })
 
 -- [[ Insert Mode ]]
 vim.keymap.set('i', '<C-a>', "<C-o>^", { silent = true })
@@ -340,8 +373,6 @@ vim.keymap.set('n', '<Leader>sc', ":noh<CR>", { silent = true })
 vim.keymap.set('n', '<BS>', ':echo expand("%:p")<CR>', { silent = true })
 vim.keymap.set('n', '<Leader><BS>', ':let @+=expand("%:p")<CR>', { silent = true })
 
-
-
 -- [[ Shortcuts ]]
 -- Insert todays date
 -- vim.keymap.set('n', '<F5>', "=strftime('%F')<CR>P", { silent = true })
@@ -349,19 +380,46 @@ vim.keymap.set('n', '<Leader><BS>', ':let @+=expand("%:p")<CR>', { silent = true
 -- [[ NETWR ]]
 vim.keymap.set('n', '<Leader>cd', ":lcd %:p:h<CR>", { silent = true })
 
+-- [[ Plugins ]]
+-- fugitive (git)
+vim.keymap.set('n', '<Leader>gs', ':Git<CR>', { desc = "[G]it [S]tatus" })
+vim.keymap.set('n', '<Leader>gd', ':Gdiffsplit!<CR>', { desc = "[G]it [D]iff" })
+vim.keymap.set('n', '<Leader>gb', ':Git blame<CR>', { desc = "[G]it [B]lame" })
+vim.keymap.set('n', '<Leader>ge', ':Gedit<CR>', { desc = "[G]it [E]dit. Or return to regular edit" })
+vim.keymap.set('n', '<Leader>gh', ':0Gclog<CR>', { desc = "[G]it [H]istory current file" })
+vim.keymap.set('n', '<Leader>gp', ':Git -c push.default=current push<CR>', { desc = "[G]it [P]ush" })
+vim.keymap.set('n', '<Leader>gpf', ':Git -c push.default=current push --force-with-least<CR>',
+  { desc = "[G]it [P]ush [F]orce" })
+vim.keymap.set('n', '<Leader>gr', ':Git rebase -i HEAD~2', { desc = "[G]it [R]ebase" })
+vim.keymap.set('n', '<Leader>gc', ':Git rebase --continue<CR>', { desc = "[R]ebase [C]ontinue" })
+vim.keymap.set('n', '<Leader>gn', ':Git checkout -branch APTEAM-', { desc = "[G]it [N]ew apteam banch" })
+vim.keymap.set('n', '<Leader>go', ':GBrowse<CR>', { desc = "[G]it [O]pen browser" })
+vim.keymap.set('n', '<Leader>gl', ':GV!<CR>', { desc = "[G]it [L]og current file" })
+vim.keymap.set('n', '<Leader>gll', ':GV<CR>', { desc = "[G]it [L]og [L]ong or all files" })
+vim.keymap.set('n', '<Leader>glr', ':GV?<CR>', { desc = "[G]it [L]og [R]evisions for current file" })
+
+-- goyo
+vim.o.goyo_width = 120
+vim.keymap.set('n', '<Leader>tz', ':Goyo<CR>', { desc = '[T]oggle [G]oyo' })
+
 -- [[ Language Stuff ]]
--- diffing
-vim.opt.diffopt:append { "vertical" }
+vim.api.nvim_create_augroup("mine", { clear = false })
 
 -- Bats
-vim.cmd([[
-  au BufNewFile,BufRead,BufReadPost *.bats set syntax=sh
-]])
+vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead", "BufReadPost" }, {
+  group = "mine",
+  pattern = "*.bats",
+  command = "set syntax=sh"
+})
 
--- SQL and sql-likes (not sqlx, have specific for that)
-vim.cmd([[
-  au BufNewFile,BufRead,BufReadPost *.hql set syntax=sql
-]])
+-- SQL and sql-likes (not sqlx, have specific plugin for that)
+vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead", "BufReadPost" }, {
+  group = "mine",
+  pattern = "*.hql",
+  command = "set syntax=sql"
+})
+
+-- python
 
 -- [[ Toggles ]]
 vim.keymap.set({ 'n' }, '<Leader>tp', ':set paste! paste?<CR>', { silent = true })
@@ -371,7 +429,7 @@ vim.keymap.set({ 'n' }, '<Leader>tss', ':set spell! spell?<CR>', { silent = true
 vim.keymap.set({ 'n' }, '<Leader>tci', ':set ic! ic?<CR>', { silent = true })
 
 -- [[ Tabs ]]
-vim.keymap.set({ 'n' }, 'T', ':tabnew .<CR>', { silent = true })
+vim.keymap.set({ 'n' }, 'T', ':tabnew %<CR>', { silent = true })
 
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
@@ -391,7 +449,7 @@ pcall(require('telescope').load_extension, 'fzf')
 
 -- See `:help telescope.builtin`
 vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
-vim.keymap.set('n', '<leader><space>', require('telescope.builtin').buffers, { desc = '[ ] Find existing buffers' })
+vim.keymap.set('n', '<leader>bb', require('telescope.builtin').buffers, { desc = '[ ] Find existing buffers' })
 vim.keymap.set('n', '<leader>/', function()
   -- You can pass additional configuration to telescope to change theme, layout, etc.
   require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
@@ -505,7 +563,7 @@ local on_attach = function(_, bufnr)
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
   nmap('gI', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
   nmap('<leader>D', vim.lsp.buf.type_definition, 'Type [D]efinition')
-  nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
+  nmap('<leader>ss', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
   nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
 
   -- See `:help K` for why this keymap
