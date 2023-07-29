@@ -287,10 +287,10 @@ require('lazy').setup({
   },
 
   -- Hot trash garbage that's local and not published
-      {
-        dir = vim.env.HOME .. "/Projects/nvim/search-internet",
-        dev = true,
-      }
+  {
+    dir = vim.env.HOME .. "/Projects/nvim/search-internet",
+    dev = true,
+  }
 }, {})
 
 -- global functions for deving
@@ -574,7 +574,8 @@ require('nvim-treesitter.configs').setup {
   },
 }
 
--- Diagnostic keymaps
+-- Diagnostic
+vim.diagnostic.config({ virtual_text = false, underline = false })
 vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous diagnostic message' })
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
