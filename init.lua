@@ -1,5 +1,5 @@
 -- Set <space> as the leader key
--- See `:help mapleader`
+--- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
 vim.g.mapleader = " "
 vim.g.maplocalleader = ' '
@@ -188,14 +188,21 @@ require('lazy').setup({
   -- comment visual regions/lines
   {
     'numToStr/Comment.nvim',
-    opts = {
-      toggler = {
-        line = 'cll'
-      },
-      opleader = {
-        line = 'cl'
+    config = function()
+      print('1:heere')
+      local opts = {
+        toggler = {
+          line = 'cll'
+        },
+        opleader = {
+          line = 'cl'
+        },
       }
-    }
+      require("Comment").setup(opts)
+
+      local ft = require("Comment.ft")
+      ft.lua = "---%s"
+    end
   },
 
   -- Fuzzy Finder (files, lsp, etc)
@@ -285,12 +292,16 @@ require('lazy').setup({
       vim.keymap.set({ 'n' }, '<Leader>wm', ':MaximizerToggle<CR>')
     end
   },
+  {
+    'andres-lowrie/nvim-search-internet',
+    config = function()
+      vim.keymap.set({ 'n' }, '<Leader>si', require('search-internet').selection, { desc = "[S]earch [I]nternet" })
+      vim.keymap.set({ 'n' }, '<Leader>sw', require('search-internet').word_under_cursor,
+        { desc = "[S]earch Internet for [W]ord under cursor" })
+    end
+  }
 
   -- Hot trash garbage that's local and not published
-  {
-    dir = vim.env.HOME .. "/Projects/nvim/search-internet",
-    dev = true,
-  }
 }, {})
 
 -- global functions for deving
@@ -351,6 +362,7 @@ vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = tr
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
 
+-- map arrows to something useful
 vim.keymap.set('n', '<Up>', ":cp<CR>", { silent = true })
 vim.keymap.set('n', '<Down>', ":cn<CR>", { silent = true })
 vim.keymap.set('n', '<Left>', ":cp<CR>", { silent = true })
@@ -503,7 +515,6 @@ vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc
 vim.keymap.set('n', '<C-p>', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
-vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 
