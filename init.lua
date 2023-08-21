@@ -67,6 +67,66 @@ require('lazy').setup({
     end
   },
 
+  -- Rest client https://github.com/rest-nvim/rest.nvim
+  {
+    'rest-nvim/rest.nvim',
+    requires = { "nvim-lua/plenary.nvim" },
+    config = function()
+      require("rest-nvim").setup({
+        -- Open request results in a horizontal split
+        result_split_horizontal = false,
+        -- Keep the http file buffer above|left when split horizontal|vertical
+        result_split_in_place = false,
+        -- Skip SSL verification, useful for unknown certificates
+        skip_ssl_verification = false,
+        -- Encode URL before making request
+        encode_url = true,
+        -- Highlight request on run
+        highlight = {
+          enabled = true,
+          timeout = 150,
+        },
+        result = {
+          -- toggle showing URL, HTTP info, headers at top the of result window
+          show_url = true,
+          -- show the generated curl command in case you want to launch
+          -- the same request via the terminal (can be verbose)
+          show_curl_command = true,
+          show_http_info = true,
+          show_headers = true,
+          -- executables or functions for formatting response body [optional]
+          -- set them to false if you want to disable them
+          formatters = {
+            json = "jq",
+            html = function(body)
+              return vim.fn.system({ "tidy", "-i", "-q", "-" }, body)
+            end
+          },
+        },
+        -- Jump to request line on run
+        jump_to_request = false,
+        env_file = '.env',
+        custom_dynamic_variables = {},
+        yank_dry_run = true,
+      })
+
+      -- @todo: only set these for the .http .rest file type
+      vim.keymap.set('n', '<leader>rr', '<Plug>RestNvim', { desc = "[R]estNvim [R]un" })
+      vim.keymap.set('n', '<leader>rl', '<Plug>RestNvimLast', { desc = "[R]estNvim [L]ast" })
+      vim.keymap.set('n', '<leader>rp', '<Plug>RestNvimPreview', { desc = "[R]estNvim [P]review" })
+    end
+  },
+
+  {
+    'iamcco/markdown-preview.nvim',
+    build = 'cd app && npm install',
+    config = function()
+      vim.g.mkdp_auto_close = 1
+      vim.keymap.set('n', '<leader>mp', '<Plug>MarkdownPreviewToggle', { desc = "[M]arkdown [P]review" })
+    end
+  },
+
+
   -- Lexima: https://github.com/cohama/lexima.vim
   -- use in lieu of auto-pairs
   'cohama/lexima.vim',
@@ -214,6 +274,9 @@ require('lazy').setup({
     end,
   },
 
+  -- use telescope for vim.ui.select
+  { 'nvim-telescope/telescope-ui-select.nvim' },
+
   {
     -- Highlight, edit, and navigate code
     'nvim-treesitter/nvim-treesitter',
@@ -300,6 +363,8 @@ require 'for_deving'
 -- [[ Setting options ]]
 -- See `:help vim.o`
 -- [[ Base/Essentials ]]
+vim.api.nvim_create_augroup("mine", { clear = false })
+
 vim.go.ignorecase = true
 vim.go.incsearch = true
 vim.go.smartcase = true
@@ -333,6 +398,15 @@ vim.o.formatoptions = "croql"
 -- [[ Diffing ]]
 vim.opt.diffopt:append { "vertical" }
 
+-- [[ Folding ]]
+vim.opt.foldmethod = "expr"
+vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
+vim.api.nvim_create_autocmd({ "BufReadPost", "FileReadPost" }, {
+  group = "mine",
+  pattern = "*",
+  command = "normal zR" -- open everything by default
+})
+
 -- [[ Clipboard ]]
 --  See `:help 'clipboard'`
 vim.o.clipboard = 'unnamedplus'
@@ -340,7 +414,6 @@ vim.keymap.set({ 'n' }, '<Leader>y', '"*y', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>p', '"*p', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>Y', '"*Y', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>P', '"*P', { silent = true })
-
 
 -- [[ Keymaps ]]
 -- See `:help vim.keymap.set()`
@@ -351,10 +424,15 @@ vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = tr
 vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = true })
 
 
-vim.keymap.set('n', '<Up>', ":cp<CR>", { silent = true })
-vim.keymap.set('n', '<Down>', ":cn<CR>", { silent = true })
-vim.keymap.set('n', '<Left>', ":cp<CR>", { silent = true })
-vim.keymap.set('n', '<Right>', ":cn<CR>", { silent = true })
+-- [[ Arrow Keys ]]
+-- @todo need to figure out how to change these depending on what I"m doing or
+--  which type of file I'm dealing with, for example when in diff mode or
+--  vim-fugitive then I want these
+--  a minor mode would be pretty cool here
+vim.keymap.set('n', '<Up>', "[c", { silent = true })
+vim.keymap.set('n', '<Down>', "]c", { silent = true })
+vim.keymap.set('n', '<Left>', ":diffget //2<CR>", { silent = true })
+vim.keymap.set('n', '<Right>', ":diffget //3<CR>", { silent = true })
 
 
 -- [[ Highlight on yank ]]
@@ -434,7 +512,7 @@ vim.keymap.set('n', '<Leader>gpf', ':Git -c push.default=current push --force-wi
 vim.keymap.set('n', '<Leader>gr', ':Git rebase -i HEAD~2', { desc = "[G]it [R]ebase" })
 vim.keymap.set('n', '<Leader>gc', ':Git rebase --continue<CR>', { desc = "[R]ebase [C]ontinue" })
 vim.keymap.set('n', '<Leader>gn', ':Git checkout -branch APTEAM-', { desc = "[G]it [N]ew apteam banch" })
-vim.keymap.set('n', '<Leader>go', ':GBrowse<CR>', { desc = "[G]it [O]pen browser" })
+vim.keymap.set('n', '<Leader>go', ':GBrowse<cfile><CR>', { desc = "[G]it [O]pen browser" })
 vim.keymap.set('n', '<Leader>gl', ':GV!<CR>', { desc = "[G]it [L]og current file" })
 vim.keymap.set('n', '<Leader>gll', ':GV<CR>', { desc = "[G]it [L]og [L]ong or all files" })
 vim.keymap.set('n', '<Leader>glr', ':GV?<CR>', { desc = "[G]it [L]og [R]evisions for current file" })
@@ -443,8 +521,20 @@ vim.keymap.set('n', '<Leader>glr', ':GV?<CR>', { desc = "[G]it [L]og [R]evisions
 vim.o.goyo_width = 120
 vim.keymap.set('n', '<Leader>tz', ':Goyo<CR>', { desc = '[T]oggle [G]oyo' })
 
+-- [[ Toggles ]]
+vim.keymap.set({ 'n' }, '<Leader>tp', ':set paste! paste?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tw', ':set wrap! wrap?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tsb', ':set scrollbind!<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tss', ':set spell! spell?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tci', ':set ic! ic?<CR>', { silent = true })
+
+-- [[ Tabs ]]
+vim.keymap.set({ 'n' }, 'T', ':tabnew %<CR>', { silent = true })
+
+-- [[ Macros ]]
+vim.keymap.set({ 'n' }, '<Leader>x', ':e scratch<CR>', { silent = true, desc = "[X] scratch buffer" })
+
 -- [[ Language Stuff ]]
-vim.api.nvim_create_augroup("mine", { clear = false })
 
 -- Bats
 vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead", "BufReadPost" }, {
@@ -460,18 +550,6 @@ vim.api.nvim_create_autocmd({ "BufNewFile", "BufRead", "BufReadPost" }, {
   command = "set syntax=sql"
 })
 
--- python
-
--- [[ Toggles ]]
-vim.keymap.set({ 'n' }, '<Leader>tp', ':set paste! paste?<CR>', { silent = true })
-vim.keymap.set({ 'n' }, '<Leader>tw', ':set wrap! wrap?<CR>', { silent = true })
-vim.keymap.set({ 'n' }, '<Leader>tsb', ':set scrollbind!<CR>', { silent = true })
-vim.keymap.set({ 'n' }, '<Leader>tss', ':set spell! spell?<CR>', { silent = true })
-vim.keymap.set({ 'n' }, '<Leader>tci', ':set ic! ic?<CR>', { silent = true })
-
--- [[ Tabs ]]
-vim.keymap.set({ 'n' }, 'T', ':tabnew %<CR>', { silent = true })
-
 -- [[ Configure Telescope ]]
 -- See `:help telescope` and `:help telescope.setup()`
 require('telescope').setup {
@@ -483,10 +561,16 @@ require('telescope').setup {
       },
     },
   },
+  extension = {
+    ["ui-select"] = {
+      require("telescope.themes").get_dropdown({})
+    }
+  }
 }
 
 -- Enable telescope fzf native, if installed
 pcall(require('telescope').load_extension, 'fzf')
+require('telescope').load_extension("ui-select")
 
 -- See `:help telescope.builtin`
 vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc = '[?] Find recently opened files' })
@@ -501,6 +585,10 @@ end, { desc = '[/] Fuzzily search in current buffer' })
 
 vim.keymap.set('n', '<leader>gf', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<C-p>', require('telescope.builtin').git_files, { desc = 'Search [G]it [F]iles' })
+vim.keymap.set('n', '<leader>ff', function()
+    require('telescope.builtin').find_files({ cwd = require('telescope.utils').buffer_dir() })
+  end,
+  { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
 vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
@@ -511,8 +599,21 @@ vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { de
 -- See `:help nvim-treesitter`
 require('nvim-treesitter.configs').setup {
   -- Add languages to be installed here that you want installed for treesitter
-  ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'typescript', 'javascript', 'vimdoc', 'vim',
-    'sql' },
+  ensure_installed = { 'c',
+    'cpp',
+    'go',
+    'lua',
+    'python',
+    'rust',
+    'tsx',
+    'typescript',
+    'javascript',
+    'vimdoc',
+    'vim',
+    'sql',
+    'http',
+    'json'
+  },
 
   -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
   auto_install = false,
