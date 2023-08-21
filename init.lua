@@ -1,5 +1,5 @@
 -- Set <space> as the leader key
--- See `:help mapleader`
+--- See `:help mapleader`
 --  NOTE: Must happen before plugins are required (otherwise wrong leader will be used)
 vim.g.mapleader = " "
 vim.g.maplocalleader = ' '
@@ -35,9 +35,6 @@ require('lazy').setup({
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
-
-  -- AutoPairs: https://github.com/jiangmiao/auto-pairs
-  -- 'LunarWatcher/auto-pairs',
 
   --Vinegar: https://github.com/tpope/vim-vinegar
   'tpope/vim-vinegar',
@@ -140,10 +137,6 @@ require('lazy').setup({
       -- Automatically install LSPs to stdpath for neovim
       { 'williamboman/mason.nvim', config = true },
       'williamboman/mason-lspconfig.nvim',
-
-      -- Useful status updates for LSP
-      -- NOTE: `opts = {}` is the same as calling `require('fidget').setup({})`
-      -- { 'j-hui/fidget.nvim',       tag = 'legacy', opts = {} },
 
       -- Additional lua configuration, makes nvim stuff amazing!
       'folke/neodev.nvim',
@@ -248,14 +241,20 @@ require('lazy').setup({
   -- comment visual regions/lines
   {
     'numToStr/Comment.nvim',
-    opts = {
-      toggler = {
-        line = 'cll'
-      },
-      opleader = {
-        line = 'cl'
+    config = function()
+      local opts = {
+        toggler = {
+          line = 'cll'
+        },
+        opleader = {
+          line = 'cl'
+        },
       }
-    }
+      require("Comment").setup(opts)
+
+      local ft = require("Comment.ft")
+      ft.lua = "---%s"
+    end
   },
 
   -- Fuzzy Finder (files, lsp, etc)
@@ -348,12 +347,16 @@ require('lazy').setup({
       vim.keymap.set({ 'n' }, '<Leader>wm', ':MaximizerToggle<CR>')
     end
   },
+  {
+    'andres-lowrie/nvim-search-internet',
+    config = function()
+      vim.keymap.set({ 'n' }, '<Leader>si', require('search-internet').selection, { desc = "[S]earch [I]nternet" })
+      vim.keymap.set({ 'n' }, '<Leader>sw', require('search-internet').word_under_cursor,
+        { desc = "[S]earch Internet for [W]ord under cursor" })
+    end
+  }
 
   -- Hot trash garbage that's local and not published
-  {
-    dir = vim.env.HOME .. "/Projects/nvim/search-internet",
-    dev = true,
-  }
 }, {})
 
 -- global functions for deving
@@ -469,8 +472,6 @@ vim.keymap.set('n', '<Leader>fa', ":wa<CR>", { silent = true })
 -- [[ Buffers ]]
 -- Last Buffer
 vim.keymap.set('n', '<Leader><Tab>', ":e#<CR>", { silent = true })
--- List Buffer
---vim.leymap.set('n', '<Leader>bb', "Telescope", { silent = true })
 -- Delete Buffer
 vim.keymap.set('n', '<Leader>bd', ":bdelete<CR>", { silent = true })
 
@@ -493,7 +494,7 @@ vim.keymap.set('n', '<BS>', ':echo expand("%:p")<CR>', { silent = true })
 vim.keymap.set('n', '<Leader><BS>', ':let @+=expand("%:p")<CR>', { silent = true })
 
 -- [[ Shortcuts ]]
--- Insert todays date
+-- Insert todays date (this doesnt work in neovim, @todo figure out why)
 -- vim.keymap.set('n', '<F5>', "=strftime('%F')<CR>P", { silent = true })
 
 -- [[ NETWR ]]
@@ -591,7 +592,6 @@ vim.keymap.set('n', '<leader>ff', function()
   { desc = 'Search [G]it [F]iles' })
 vim.keymap.set('n', '<leader>sf', require('telescope.builtin').find_files, { desc = '[S]earch [F]iles' })
 vim.keymap.set('n', '<leader>sh', require('telescope.builtin').help_tags, { desc = '[S]earch [H]elp' })
-vim.keymap.set('n', '<leader>sw', require('telescope.builtin').grep_string, { desc = '[S]earch current [W]ord' })
 vim.keymap.set('n', '<leader>sg', require('telescope.builtin').live_grep, { desc = '[S]earch by [G]rep' })
 vim.keymap.set('n', '<leader>sd', require('telescope.builtin').diagnostics, { desc = '[S]earch [D]iagnostics' })
 
@@ -717,9 +717,6 @@ local on_attach = function(_, bufnr)
   nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
   nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
   nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
-  -- nmap('<leader>wl', function()
-  --   print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  -- end, '[W]orkspace [L]ist Folders')
 
   -- Create a command `:Format` local to the LSP buffer
   vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
