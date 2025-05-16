@@ -27,11 +27,24 @@ vim.opt.rtp:prepend(lazypath)
 --    as they will be available in your neovim runtime.
 require('lazy').setup({
   -- NOTE: First, some plugins that don't require any configuration
+  'gcmt/taboo.vim',
 
   -- Git related plugins
   'tpope/vim-fugitive',
   'tpope/vim-rhubarb',
+  'tpope/vim-abolish',
   'junegunn/gv.vim',
+
+  {
+    "NeogitOrg/neogit",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+      "sindrets/diffview.nvim",
+      "nvim-telescope/telescope.nvim",
+    },
+    config = true
+  },
+
 
   -- Detect tabstop and shiftwidth automatically
   'tpope/vim-sleuth',
@@ -44,6 +57,15 @@ require('lazy').setup({
 
   -- Signature:  https://github.com/kshenoy/vim-signature
   'kshenoy/vim-signature',
+
+  -- there are a bunch of plugins that want to use this so
+  { 'nvim-tree/nvim-web-devicons' },
+  {
+    'rcarriga/nvim-notify',
+    config = function()
+      vim.notify = require('notify')
+    end
+  },
 
   -- Goyo: https://github.com/junegunn/goyo.vim
   {
@@ -64,54 +86,68 @@ require('lazy').setup({
     end
   },
 
-  -- Rest client https://github.com/rest-nvim/rest.nvim
   {
-    'rest-nvim/rest.nvim',
-    requires = { "nvim-lua/plenary.nvim" },
+    'pwntester/octo.nvim',
     config = function()
-      require("rest-nvim").setup({
-        -- Open request results in a horizontal split
-        result_split_horizontal = false,
-        -- Keep the http file buffer above|left when split horizontal|vertical
-        result_split_in_place = false,
-        -- Skip SSL verification, useful for unknown certificates
-        skip_ssl_verification = false,
-        -- Encode URL before making request
-        encode_url = true,
-        -- Highlight request on run
-        highlight = {
-          enabled = true,
-          timeout = 150,
-        },
-        result = {
-          -- toggle showing URL, HTTP info, headers at top the of result window
-          show_url = true,
-          -- show the generated curl command in case you want to launch
-          -- the same request via the terminal (can be verbose)
-          show_curl_command = true,
-          show_http_info = true,
-          show_headers = true,
-          -- executables or functions for formatting response body [optional]
-          -- set them to false if you want to disable them
-          formatters = {
-            json = "jq",
-            html = function(body)
-              return vim.fn.system({ "tidy", "-i", "-q", "-" }, body)
-            end
+      require('octo').setup({
+        mappings = {
+          pull_request = {
+            checkout_pr = { lhs = "<space>po", desc = "Checkout PR" }
           },
         },
-        -- Jump to request line on run
-        jump_to_request = false,
-        env_file = '.env',
-        custom_dynamic_variables = {},
-        yank_dry_run = true,
+        suppress_missing_scope = {
+          projects_v2 = true,
+        },
       })
 
-      -- @todo: only set these for the .http .rest file type
-      vim.keymap.set('n', '<leader>rr', '<Plug>RestNvim', { desc = "[R]estNvim [R]un" })
-      vim.keymap.set('n', '<leader>rl', '<Plug>RestNvimLast', { desc = "[R]estNvim [L]ast" })
-      vim.keymap.set('n', '<leader>rp', '<Plug>RestNvimPreview', { desc = "[R]estNvim [P]review" })
+      local proc = io.popen('git branch --show-current')
+      local current_branch = proc:read('*all')
+      proc:close()
+
+      --- vim.api.nvim_set_keymap('n', '<leader>g/',
+      ---   ':Octo search repo:<some-repo> is:pr is:open draft:false<cr>',
+      ---   { noremap = true, silent = true })
     end
+  },
+
+  {
+    'tpope/vim-dotenv',
+    config = function()
+      vim.api.nvim_create_autocmd("VimEnter", {
+        pattern = { "*" },
+        callback = function()
+          vim.api.nvim_exec2([[
+          if exists(':Dotenv') | exe ':Dotenv! ~/.dadbod.env' | endif
+          ]], {})
+        end
+      })
+    end
+  },
+
+  {
+    'kristijanhusak/vim-dadbod-ui',
+    dependencies = {
+      { 'tpope/vim-dadbod',                     lazy = true },
+      { 'kristijanhusak/vim-dadbod-completion', ft = { 'sql', 'mysql', 'plsql' }, lazy = true },
+    },
+    cmd = {
+      'DBUI',
+      'DBUIToggle',
+      'DBUIAddConnection',
+      'DBUIFindBuffer',
+    },
+    config = function()
+      vim.api.nvim_create_autocmd({ "FileType" }, {
+        pattern = { "dbout" },
+        command = "setlocal nofoldenable"
+      })
+    end,
+    init = function()
+      -- DBUI configuration
+      vim.g.db_ui_execute_on_save = 0
+      vim.g.db_ui_save_location = '~/Queries'
+      vim.g.db_ui_use_nvim_notify = 1
+    end,
   },
 
   {
@@ -123,6 +159,48 @@ require('lazy').setup({
     end
   },
 
+  -- Co-Pilot
+  -- I put this before the completion stuff since I'm pretty sure (although I
+  -- haven't dug deep) that those plugins need to be loaded after this
+  {
+    'github/copilot.vim',
+    init = function()
+      vim.keymap.set('i', '<C-F>', '<Plug>(copilot-accept-word)')
+      vim.keymap.set('i', '<C-]>', 'copilot#Accept("\\<CR>")', {
+        expr = true,
+        replace_keycodes = false
+      })
+      vim.g.copilot_no_tab_map = true
+    end
+  },
+
+  -- Scala
+  -- Using metals instead of nvim-lspconfig since this plugin implements more features
+  {
+    "scalameta/nvim-metals",
+    dependencies = {
+      "nvim-lua/plenary.nvim",
+    },
+    ft = { "scala", "sbt", "java" },
+    opts = function()
+      local metals_config = require("metals").bare_config()
+      metals_config.on_attach = function(client, bufnr)
+        -- your on_attach function
+      end
+
+      return metals_config
+    end,
+    config = function(self, metals_config)
+      local nvim_metals_group = vim.api.nvim_create_augroup("nvim-metals", { clear = true })
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = self.ft,
+        callback = function()
+          require("metals").initialize_or_attach(metals_config)
+        end,
+        group = nvim_metals_group,
+      })
+    end
+  },
 
   -- Lexima: https://github.com/cohama/lexima.vim
   -- use in lieu of auto-pairs
@@ -158,9 +236,12 @@ require('lazy').setup({
       'rafamadriz/friendly-snippets',
     },
   },
+  {
+    'nvim-treesitter/nvim-treesitter-context'
+  },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim',          opts = {} },
+  { 'folke/which-key.nvim',       opts = {} },
   {
     -- Adds git releated signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -200,6 +281,10 @@ require('lazy').setup({
         dawnfox = {
           comment = commentcolor,
         },
+        dayfox = {
+          comment = commentcolor,
+          bg1 = "#ffffff",
+        },
       }
 
       require('nightfox').setup({
@@ -232,9 +317,11 @@ require('lazy').setup({
     'lukas-reineke/indent-blankline.nvim',
     -- Enable `lukas-reineke/indent-blankline.nvim`
     -- See `:help indent_blankline.txt`
+    main = 'ibl',
     opts = {
-      char = '┊',
-      show_trailing_blankline_indent = false,
+      indent = {
+        char = '┊',
+      }
     },
   },
 
@@ -254,11 +341,12 @@ require('lazy').setup({
 
       local ft = require("Comment.ft")
       ft.lua = "---%s"
+      ft.sqlx = "/*%s*/"
     end
   },
 
   -- Fuzzy Finder (files, lsp, etc)
-  { 'nvim-telescope/telescope.nvim', branch = '0.1.x', dependencies = { 'nvim-lua/plenary.nvim' } },
+  { 'nvim-telescope/telescope.nvim',          branch = '0.1.x', dependencies = { 'nvim-lua/plenary.nvim' } },
 
   -- Fuzzy Finder Algorithm which requires local dependencies to be built.
   -- Only load if `make` is available. Make sure you have the system
@@ -288,7 +376,7 @@ require('lazy').setup({
   {
     't9md/vim-choosewin',
     config = function()
-      vim.go.choosewin_overlay_enable = 1
+      vim.g.choosewin_overlay_enable = 1
       vim.keymap.set({ 'n' }, '<Leader>ww', '<Plug>(choosewin)')
     end
   },
@@ -334,13 +422,32 @@ require('lazy').setup({
     end
   },
 
+  -- Tabular
+  { 'godlygeek/tabular' },
+
+
+  -- Dealing with windows
+  {
+    'pogyomo/winresize.nvim',
+    config = function()
+      local resize = function(win, amt, dir)
+        return function()
+          require("winresize").resize(win, amt, dir)
+        end
+      end
+
+      vim.keymap.set({ "n" }, "rh", resize(0, 5, "left"))
+      vim.keymap.set({ "n" }, "rj", resize(0, 4, "down"))
+      vim.keymap.set({ "n" }, "rk", resize(0, 4, "up"))
+      vim.keymap.set({ "n" }, "rl", resize(0, 5, "right"))
+    end
+  },
+
   -- In this repo
   require 'kickstart.plugins.autoformat',
   { import = 'custom.plugins' },
 
   -- My Garbage from outside ths directory that's "published"
-  'andres-lowrie/vim-sqlx',
-
   {
     'andres-lowrie/vim-maximizer',
     config = function()
@@ -354,13 +461,15 @@ require('lazy').setup({
       vim.keymap.set({ 'n' }, '<Leader>sw', require('search-internet').word_under_cursor,
         { desc = "[S]earch Internet for [W]ord under cursor" })
     end
-  }
+  },
 
   -- Hot trash garbage that's local and not published
 }, {})
 
--- global functions for deving
+-- global functions for deving and ihm specific stuff
 require 'for_deving'
+require 'lint_and_format'
+require 'web_shortcuts'
 
 
 -- [[ Setting options ]]
@@ -371,7 +480,7 @@ vim.api.nvim_create_augroup("mine", { clear = false })
 vim.go.ignorecase = true
 vim.go.incsearch = true
 vim.go.smartcase = true
-vim.go.spellang = 'en_us'
+vim.go.spelllang = 'en_us'
 vim.o.autoindent = true
 vim.o.breakindent = true
 vim.o.completeopt = 'menuone,noselect'
@@ -390,6 +499,7 @@ vim.o.undofile = true
 vim.o.updatetime = 250
 vim.wo.number = true
 vim.wo.signcolumn = 'yes'
+vim.keymap.set({ 'n' }, 'gqq', 'gww')
 
 -- [[ Indentation ]]
 vim.o.tabstop = 2
@@ -401,26 +511,18 @@ vim.o.formatoptions = "croql"
 -- [[ Diffing ]]
 vim.opt.diffopt:append { "vertical" }
 
--- [[ Folding ]]
-vim.opt.foldmethod = "expr"
-vim.opt.foldexpr = "nvim_treesitter#foldexpr()"
-vim.api.nvim_create_autocmd({ "BufReadPost", "FileReadPost" }, {
-  group = "mine",
-  pattern = "*",
-  command = "normal zR" -- open everything by default
-})
-
 -- [[ Clipboard ]]
 --  See `:help 'clipboard'`
 vim.o.clipboard = 'unnamedplus'
 vim.keymap.set({ 'n' }, '<Leader>y', '"*y', { silent = true })
-vim.keymap.set({ 'n' }, '<Leader>p', '"*p', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>Y', '"*Y', { silent = true })
-vim.keymap.set({ 'n' }, '<Leader>P', '"*P', { silent = true })
 
 -- [[ Keymaps ]]
 -- See `:help vim.keymap.set()`
 vim.keymap.set({ 'n', 'v' }, '<Space>', '<Nop>', { silent = true })
+vim.keymap.set({ 'i' }, '<C-j>', '(', { silent = true })
+vim.keymap.set({ 'i' }, '<C-k>', '{', { silent = true })
+vim.keymap.set({ 'i' }, '<C-l>', '[', { silent = true })
 
 -- Remap for dealing with word wrap
 vim.keymap.set('n', 'k', "v:count == 0 ? 'gk' : 'k'", { expr = true, silent = true })
@@ -492,10 +594,7 @@ vim.keymap.set('c', '<M-e>', "<Right>", { silent = true })
 vim.keymap.set('n', '<Leader>sc', ":noh<CR>", { silent = true })
 vim.keymap.set('n', '<BS>', ':echo expand("%:p")<CR>', { silent = true })
 vim.keymap.set('n', '<Leader><BS>', ':let @+=expand("%:p")<CR>', { silent = true })
-
--- [[ Shortcuts ]]
--- Insert todays date (this doesnt work in neovim, @todo figure out why)
--- vim.keymap.set('n', '<F5>', "=strftime('%F')<CR>P", { silent = true })
+vim.keymap.set('n', 'gF', '<c-w>vgF', { silent = true })
 
 -- [[ NETWR ]]
 vim.keymap.set('n', '<Leader>cd', ":lcd %:p:h<CR>", { silent = true })
@@ -508,18 +607,25 @@ vim.keymap.set('n', '<Leader>gb', ':Git blame<CR>', { desc = "[G]it [B]lame" })
 vim.keymap.set('n', '<Leader>ge', ':Gedit<CR>', { desc = "[G]it [E]dit. Or return to regular edit" })
 vim.keymap.set('n', '<Leader>gh', ':0Gclog<CR>', { desc = "[G]it [H]istory current file" })
 vim.keymap.set('n', '<Leader>gp', ':Git -c push.default=current push<CR>', { desc = "[G]it [P]ush" })
-vim.keymap.set('n', '<Leader>gpf', ':Git -c push.default=current push --force-with-least<CR>',
+vim.keymap.set('n', '<Leader>gpf', ':Git -c push.default=current push --force<CR>',
   { desc = "[G]it [P]ush [F]orce" })
 vim.keymap.set('n', '<Leader>gr', ':Git rebase -i HEAD~2', { desc = "[G]it [R]ebase" })
 vim.keymap.set('n', '<Leader>gc', ':Git rebase --continue<CR>', { desc = "[R]ebase [C]ontinue" })
-vim.keymap.set('n', '<Leader>gn', ':Git checkout -branch APTEAM-', { desc = "[G]it [N]ew apteam banch" })
-vim.keymap.set('n', '<Leader>go', ':GBrowse<cfile><CR>', { desc = "[G]it [O]pen browser" })
+vim.keymap.set('n', '<Leader>gu', ':Git checkout %', { desc = "[G]it [U]ndo changes to this file" })
+vim.keymap.set('n', '<Leader>gg', function()
+  local filename = vim.fn.expand('%:t')
+  if string.match(filename, 'fugitiveblame') then
+    vim.api.nvim_cmd({ cmd = 'GBrowse', args = { '<cfile>' } }, {})
+  else
+    vim.api.nvim_cmd({ cmd = 'GBrowse' }, {})
+  end
+end, { desc = "[G]it [O]pen browser" })
 vim.keymap.set('n', '<Leader>gl', ':GV!<CR>', { desc = "[G]it [L]og current file" })
 vim.keymap.set('n', '<Leader>gll', ':GV<CR>', { desc = "[G]it [L]og [L]ong or all files" })
 vim.keymap.set('n', '<Leader>glr', ':GV?<CR>', { desc = "[G]it [L]og [R]evisions for current file" })
 
 -- goyo
-vim.o.goyo_width = 120
+vim.g.goyo_width = 140
 vim.keymap.set('n', '<Leader>tz', ':Goyo<CR>', { desc = '[T]oggle [G]oyo' })
 
 -- [[ Toggles ]]
@@ -528,12 +634,16 @@ vim.keymap.set({ 'n' }, '<Leader>tw', ':set wrap! wrap?<CR>', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>tsb', ':set scrollbind!<CR>', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>tss', ':set spell! spell?<CR>', { silent = true })
 vim.keymap.set({ 'n' }, '<Leader>tci', ':set ic! ic?<CR>', { silent = true })
+vim.keymap.set({ 'n' }, '<Leader>tcc', ':TSContextToggle<CR>', { silent = true })
 
 -- [[ Tabs ]]
 vim.keymap.set({ 'n' }, 'T', ':tabnew %<CR>', { silent = true })
 
 -- [[ Macros ]]
-vim.keymap.set({ 'n' }, '<Leader>x', ':e scratch<CR>', { silent = true, desc = "[X] scratch buffer" })
+vim.keymap.set({ 'n' }, '<Leader>x', function()
+  vim.api.nvim_command('!rm -f scratch')
+  vim.api.nvim_command(':e scratch')
+end, { silent = true, desc = "[X] scratch buffer" })
 
 -- [[ Language Stuff ]]
 
@@ -559,6 +669,7 @@ require('telescope').setup {
       i = {
         ['<C-u>'] = false,
         ['<C-d>'] = false,
+        ['<C-f>'] = require('telescope.actions').send_to_qflist + require('telescope.actions').open_qflist
       },
     },
   },
@@ -578,6 +689,7 @@ vim.keymap.set('n', '<leader>?', require('telescope.builtin').oldfiles, { desc =
 vim.keymap.set('n', '<leader>bb', require('telescope.builtin').buffers, { desc = '[ ] Find existing buffers' })
 vim.keymap.set('n', '<leader>/', function()
   -- You can pass additional configuration to telescope to change theme, layout, etc.
+  --
   require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
     winblend = 10,
     previewer = false,
@@ -703,6 +815,7 @@ local on_attach = function(_, bufnr)
   nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
 
   nmap('gd', vim.lsp.buf.definition, '[G]oto [D]efinition')
+  nmap('gD', '<c-w>v<cmd>lua vim.lsp.buf.definition()<CR>', '[G]oto [D]efinition in a new vsplit')
   nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
   nmap('gI', vim.lsp.buf.implementation, '[G]oto [I]mplementation')
   nmap('<leader>D', vim.lsp.buf.type_definition, 'Type [D]efinition')
@@ -714,7 +827,6 @@ local on_attach = function(_, bufnr)
   nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
   -- Lesser used LSP functionality
-  nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
   nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
   nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
 
@@ -730,11 +842,11 @@ end
 --  Add any additional override configuration in the following tables. They will be passed to
 --  the `settings` field of the server config. You must look up that documentation yourself.
 local servers = {
-  -- clangd = {},
-  -- gopls = {},
-  -- pyright = {},
-  -- rust_analyzer = {},
-  -- tsserver = {},
+  clangd = {},
+  gopls = {},
+  pyright = {},
+  rust_analyzer = {},
+  tsserver = {},
 
   lua_ls = {
     Lua = {
@@ -742,6 +854,7 @@ local servers = {
       telemetry = { enable = false },
     },
   },
+  marksman = {}
 }
 
 -- Setup neovim lua configuration
@@ -815,6 +928,32 @@ cmp.setup {
     { name = 'luasnip' },
   },
 }
+
+-- Golang
+-- from https://github.com/golang/tools/blob/master/gopls/doc/vim.md#imports-and-formatting
+-- note sure if there is a better hook or place to put this so ... at the end it goes
+vim.api.nvim_create_autocmd("BufWritePre", {
+  pattern = "*.go",
+  callback = function()
+    local params = vim.lsp.util.make_range_params()
+    params.context = { only = { "source.organizeImports" } }
+    -- buf_request_sync defaults to a 1000ms timeout. Depending on your
+    -- machine and codebase, you may want longer. Add an additional
+    -- argument after params if you find that you have to write the file
+    -- twice for changes to be saved.
+    -- E.g., vim.lsp.buf_request_sync(0, "textDocument/codeAction", params, 3000)
+    local result = vim.lsp.buf_request_sync(0, "textDocument/codeAction", params)
+    for cid, res in pairs(result or {}) do
+      for _, r in pairs(res.result or {}) do
+        if r.edit then
+          local enc = (vim.lsp.get_client_by_id(cid) or {}).offset_encoding or "utf-16"
+          vim.lsp.util.apply_workspace_edit(r.edit, enc)
+        end
+      end
+    end
+    vim.lsp.buf.format({ async = false })
+  end
+})
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
